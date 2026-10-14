@@ -1,28 +1,31 @@
-From d95c0a1331fa79a81a66f0be37ef31c39ba61efe Mon Sep 17 00:00:00 2001
-From: "suricata.lu" <suricata.lu@gmail.com>
-Date: Wed, 28 Jan 2026 13:46:31 +0800
+From fc563e2925bc2cbea75eb0e640c09d4b2f17bf57 Mon Sep 17 00:00:00 2001
+From: Wade Lin <varyccgo@gmail.com>
+Date: Mon, 12 Oct 2026 15:15:33 +0800
 Subject: [PATCH] change to use Image and dtb in rootfs
 
+Upstream-Status: Inappropriate [embedded specific]
+Signed-off-by: Wade Lin <varyccgo@gmail.com>
 ---
- board/freescale/imx8mq_evk/imx8mq_evk.c | 92 +++++++++++++++++++++++++
- configs/imx8mq_evk_defconfig            |  2 +-
- include/configs/imx8mq_evk.h            | 20 ++++--
- 3 files changed, 109 insertions(+), 5 deletions(-)
+ board/freescale/imx8mq_evk/imx8mq_evk.c   | 92 +++++++++++++++++++++++
+ board/freescale/imx8mq_evk/imx8mq_evk.env |  9 ++-
+ configs/imx8mq_evk_defconfig              |  2 +-
+ include/configs/imx8mq_evk.h              |  6 ++
+ 4 files changed, 104 insertions(+), 5 deletions(-)
 
 diff --git a/board/freescale/imx8mq_evk/imx8mq_evk.c b/board/freescale/imx8mq_evk/imx8mq_evk.c
-index d4c326249f4..85380ce5ab4 100644
+index 707d1b23664..0e8d12770ad 100644
 --- a/board/freescale/imx8mq_evk/imx8mq_evk.c
 +++ b/board/freescale/imx8mq_evk/imx8mq_evk.c
-@@ -30,6 +30,8 @@
- #include "../common/pfuze.h"
+@@ -15,6 +15,8 @@
+ #include "../common/tcpc.h"
  #include <usb.h>
  #include <dwc3-uboot.h>
 +#include <fs.h>
 +#include <linux/delay.h>
  
- DECLARE_GLOBAL_DATA_PTR;
+ #define UART_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_FSEL1 | PAD_CTL_PUE)
  
-@@ -336,3 +338,93 @@ int is_recovery_key_pressing(void)
+@@ -305,3 +307,93 @@ int is_recovery_key_pressing(void)
  }
  #endif /* CONFIG_ANDROID_RECOVERY */
  #endif /* CONFIG_FSL_FASTBOOT */
@@ -116,73 +119,70 @@ index d4c326249f4..85380ce5ab4 100644
 +    "Boot from eMMC or SD Card based on mmcdev environment variable"
 +);
 +#endif /* CONFIG_STANDARD_BOOT */
+diff --git a/board/freescale/imx8mq_evk/imx8mq_evk.env b/board/freescale/imx8mq_evk/imx8mq_evk.env
+index 926f1af8575..38063e116c5 100644
+--- a/board/freescale/imx8mq_evk/imx8mq_evk.env
++++ b/board/freescale/imx8mq_evk/imx8mq_evk.env
+@@ -35,7 +35,7 @@ loadaddr=CONFIG_SYS_LOAD_ADDR
+ mmcautodetect=yes
+ mmcdev=CONFIG_SYS_MMC_ENV_DEV
+ mmcpart=1
+-mmcroot=/dev/mmcblk1p2 rootwait rw
++mmcroot=/dev/mmcblk1p1 rootwait rw
+ prepare_mcore=setenv mcore_clk clk-imx8mq.mcore_booted;
+ scriptaddr=0x43500000
+ 
+@@ -54,8 +54,9 @@ jh_mmcboot=setenv fdtfile imx8mq-evk-root.dtb;
+ 	else run jh_netboot; fi;
+ jh_netboot=setenv fdtfile imx8mq-evk-root.dtb; setenv jh_clk kvm.enable_virt_at_load=false clk_ignore_unused mem=1872M; run netboot;
+ mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} earlycon=${earlycon} root=${mmcroot}
+-loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}
+-loadfdt=load mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} ${fdtfile}
++loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} /boot/${image}
++loadfdt=load mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} /boot/${fdtfile}
++standard_bootcmd=standard_boot
+ mmcboot=echo Booting from mmc ...;
+ 	run mmcargs;
+ 	if test ${boot_fdt} = yes || test ${boot_fdt} = try; then
+@@ -67,7 +68,7 @@ mmcboot=echo Booting from mmc ...;
+ 	else
+ 		echo wait for boot;
+ 	fi;
+-emmcboot=echo Booting from emmc ...; setenv mmcdev 0; setenv mmcroot /dev/mmcblk0p2 rootwait rw;
++emmcboot=echo Booting from emmc ...; setenv mmcdev 0; setenv mmcroot /dev/mmcblk0p1 rootwait rw;
+ 	run mmcargs;
+ 	mmc dev ${mmcdev};
+ 	if run loadimage; then
 diff --git a/configs/imx8mq_evk_defconfig b/configs/imx8mq_evk_defconfig
-index 092cd2a65af..e70c94d010a 100644
+index ee399c03cae..2b3fcc48f6e 100644
 --- a/configs/imx8mq_evk_defconfig
 +++ b/configs/imx8mq_evk_defconfig
-@@ -27,7 +27,7 @@ CONFIG_IMX_BOOTAUX=y
- CONFIG_SYS_LOAD_ADDR=0x40400000
- CONFIG_DEFAULT_DEVICE_TREE="fsl-imx8mq-ecu150a1"
- CONFIG_REMAKE_ELF=y
--CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;run distro_bootcmd;run bsp_bootcmd"
-+CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;run standard_bootcmd"
- CONFIG_SYS_MONITOR_LEN=524288
- CONFIG_FIT=y
+@@ -35,7 +35,7 @@ CONFIG_FIT=y
  CONFIG_FIT_EXTERNAL_OFFSET=0x3000
+ CONFIG_SPL_LOAD_FIT=y
+ CONFIG_OF_SYSTEM_SETUP=y
+-CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;bootflow scan -lb; run bsp_bootcmd"
++CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;run standard_bootcmd"
+ CONFIG_DEFAULT_FDT_FILE="fsl-imx8mq-ecu150a1.dtb"
+ CONFIG_SYS_PBSIZE=1050
+ CONFIG_BOARD_EARLY_INIT_F=y
 diff --git a/include/configs/imx8mq_evk.h b/include/configs/imx8mq_evk.h
-index ff51800ba48..901a896fd7f 100644
+index 57139821636..fbcb9b4c11e 100644
 --- a/include/configs/imx8mq_evk.h
 +++ b/include/configs/imx8mq_evk.h
-@@ -83,6 +83,7 @@
- 	BOOTENV \
- 	SR_IR_V2_COMMAND \
- 	JAILHOUSE_ENV \
-+	CFG_EXTRA_ENV_STANDARD \
- 	"prepare_mcore=setenv mcore_clk clk-imx8mq.mcore_booted;\0" \
- 	"scriptaddr=0x43500000\0" \
- 	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
-@@ -98,14 +99,14 @@
- 	"bootm_size=0x10000000\0" \
- 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
- 	"mmcpart=1\0" \
--	"mmcroot=/dev/mmcblk1p2 rootwait rw\0" \
-+	"mmcroot=/dev/mmcblk1p1 rootwait rw\0" \
- 	"mmcautodetect=yes\0" \
- 	"mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} root=${mmcroot}\0 " \
- 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
- 	"bootscript=echo Running bootscript from mmc ...; " \
- 		"source\0" \
--	"loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
--	"loadfdt=load mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} ${fdtfile}\0" \
-+	"loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} /boot/${image}\0" \
-+	"loadfdt=load mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} /boot/${fdtfile}\0" \
- 	"mmcboot=echo Booting from mmc ...; " \
- 		"run mmcargs; " \
- 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-@@ -117,7 +118,7 @@
- 		"else " \
- 			"echo wait for boot; " \
- 		"fi;\0" \
--	"emmcboot=echo Booting from emmc ...; setenv mmcdev 0; setenv mmcroot /dev/mmcblk0p2 rootwait rw;" \
-+	"emmcboot=echo Booting from emmc ...; setenv mmcdev 0; setenv mmcroot /dev/mmcblk0p1 rootwait rw;" \
- 		"run mmcargs; " \
- 		"mmc dev ${mmcdev};" \
- 		"if run loadimage; then " \
-@@ -176,6 +177,17 @@
- 			   "fi; " \
- 		   "else run emmcboot; fi;"
+@@ -35,6 +35,12 @@
+ #define CFG_FEC_MXC_PHYADDR          0
+ #endif
  
-+
 +#define CONFIG_DTB_FILE                  "fsl-imx8mq-ecu150a1.dtb"
 +
 +/* Standard Boot Related */
 +#define CONFIG_STANDARD_BOOT
 +#define CONFIG_STANDARD_ROOTFS_PART 1  /* rootfs partition number (p1) */
 +
-+#define CFG_EXTRA_ENV_STANDARD \
-+    "standard_bootcmd=standard_boot\0"
-+
-+
  /* Link Definitions */
  
  #define CFG_SYS_INIT_RAM_ADDR        0x40000000
+-- 
+2.53.0
+
