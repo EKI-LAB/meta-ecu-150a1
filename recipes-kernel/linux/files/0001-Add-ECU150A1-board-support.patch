@@ -3,6 +3,7 @@ From: invalid_git config <unknown@unknown>
 Date: Wed, 24 Dec 2025 10:08:03 +0000
 Subject: [PATCH] Add ECU150A1 board support
 
+Upstream-Status: Inappropriate [embedded specific]
 ---
  .../dts/freescale/fsl-imx8mq-ecu150a1.dts     | 802 ++++++++++++++++++
  drivers/char/Kconfig                          |   6 +

@@ -1,19 +1,22 @@
-From b8ba4334dbb8616c90d8e06cb2cf1453f440385e Mon Sep 17 00:00:00 2001
-From: "suricata.lu" <suricata.lu@gmail.com>
-Date: Wed, 28 Jan 2026 23:49:27 +0800
+From d1ac235dbd00e4e2ffe9d45b24578d49627be48f Mon Sep 17 00:00:00 2001
+From: Wade Lin <varyccgo@gmail.com>
+Date: Mon, 12 Oct 2026 15:27:54 +0800
 Subject: [PATCH] Support RAUC AB boot
 
+Upstream-Status: Inappropriate [embedded specific]
+Signed-off-by: Wade Lin <varyccgo@gmail.com>
 ---
- board/freescale/imx8mq_evk/imx8mq_evk.c | 138 ++++++++++++++++++++++++
- configs/imx8mq_evk_defconfig            |   4 +-
- include/configs/imx8mq_evk.h            |  15 +++
- 3 files changed, 155 insertions(+), 2 deletions(-)
+ board/freescale/imx8mq_evk/imx8mq_evk.c   | 138 ++++++++++++++++++++++
+ board/freescale/imx8mq_evk/imx8mq_evk.env |   6 +
+ configs/imx8mq_evk_defconfig              |   4 +-
+ include/configs/imx8mq_evk.h              |   5 +
+ 4 files changed, 151 insertions(+), 2 deletions(-)
 
 diff --git a/board/freescale/imx8mq_evk/imx8mq_evk.c b/board/freescale/imx8mq_evk/imx8mq_evk.c
-index 85380ce5ab4..e3f80d11ece 100644
+index 0e8d12770ad..2436eec64f9 100644
 --- a/board/freescale/imx8mq_evk/imx8mq_evk.c
 +++ b/board/freescale/imx8mq_evk/imx8mq_evk.c
-@@ -428,3 +428,141 @@ U_BOOT_CMD(
+@@ -397,3 +397,141 @@ U_BOOT_CMD(
      "Boot from eMMC or SD Card based on mmcdev environment variable"
  );
  #endif /* CONFIG_STANDARD_BOOT */
@@ -155,8 +158,23 @@ index 85380ce5ab4..e3f80d11ece 100644
 +);
 +
 +#endif /* CONFIG_RAUC_AB_BOOT */
+diff --git a/board/freescale/imx8mq_evk/imx8mq_evk.env b/board/freescale/imx8mq_evk/imx8mq_evk.env
+index 38063e116c5..7bb1b7f300a 100644
+--- a/board/freescale/imx8mq_evk/imx8mq_evk.env
++++ b/board/freescale/imx8mq_evk/imx8mq_evk.env
+@@ -119,4 +119,10 @@ bsp_bootcmd=setenv opteeoverlay yes;echo Running BSP bootcmd ...;
+ 	else run emmcboot;
+ 	fi;
+ 
++BOOT_ORDER=system0 system1
++BOOT_system0_LEFT=3
++BOOT_system1_LEFT=3
++rauc_slot=
++rauc_bootcmd=rauc_boot
++
+ #endif
 diff --git a/configs/imx8mq_evk_defconfig b/configs/imx8mq_evk_defconfig
-index e70c94d010a..202fe52ed72 100644
+index 2b3fcc48f6e..bb0acbf21af 100644
 --- a/configs/imx8mq_evk_defconfig
 +++ b/configs/imx8mq_evk_defconfig
 @@ -9,7 +9,7 @@ CONFIG_SPL_SYS_MALLOC_F_LEN=0x2000
@@ -168,45 +186,31 @@ index e70c94d010a..202fe52ed72 100644
  CONFIG_SYS_I2C_MXC_I2C1=y
  CONFIG_SYS_I2C_MXC_I2C2=y
  CONFIG_SYS_I2C_MXC_I2C3=y
-@@ -27,7 +27,7 @@ CONFIG_IMX_BOOTAUX=y
- CONFIG_SYS_LOAD_ADDR=0x40400000
- CONFIG_DEFAULT_DEVICE_TREE="fsl-imx8mq-ecu150a1"
- CONFIG_REMAKE_ELF=y
+@@ -35,7 +35,7 @@ CONFIG_FIT=y
+ CONFIG_FIT_EXTERNAL_OFFSET=0x3000
+ CONFIG_SPL_LOAD_FIT=y
+ CONFIG_OF_SYSTEM_SETUP=y
 -CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;run standard_bootcmd"
 +CONFIG_BOOTCOMMAND="run sr_ir_v2_cmd;run rauc_bootcmd"
- CONFIG_SYS_MONITOR_LEN=524288
- CONFIG_FIT=y
- CONFIG_FIT_EXTERNAL_OFFSET=0x3000
+ CONFIG_DEFAULT_FDT_FILE="fsl-imx8mq-ecu150a1.dtb"
+ CONFIG_SYS_PBSIZE=1050
+ CONFIG_BOARD_EARLY_INIT_F=y
 diff --git a/include/configs/imx8mq_evk.h b/include/configs/imx8mq_evk.h
-index 901a896fd7f..4da7a2f4d8a 100644
+index fbcb9b4c11e..85875eb614d 100644
 --- a/include/configs/imx8mq_evk.h
 +++ b/include/configs/imx8mq_evk.h
-@@ -84,6 +84,7 @@
- 	SR_IR_V2_COMMAND \
- 	JAILHOUSE_ENV \
- 	CFG_EXTRA_ENV_STANDARD \
-+	CFG_EXTRA_ENV_RAUC \
- 	"prepare_mcore=setenv mcore_clk clk-imx8mq.mcore_booted;\0" \
- 	"scriptaddr=0x43500000\0" \
- 	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
-@@ -188,6 +189,20 @@
-     "standard_bootcmd=standard_boot\0"
- 
+@@ -41,6 +41,11 @@
+ #define CONFIG_STANDARD_BOOT
+ #define CONFIG_STANDARD_ROOTFS_PART 1  /* rootfs partition number (p1) */
  
 +/* RAUC Realated */
 +#define CONFIG_RAUC_AB_BOOT
 +#define CONFIG_RAUC_DEFAULT_BOOT_ORDER    "system0 system1"
 +#define CONFIG_RAUC_DEFAULT_BOOT_TRIES    3
 +
-+/* Default environment variables for A/B boot */
-+#define CFG_EXTRA_ENV_RAUC \
-+    "BOOT_ORDER=" CONFIG_RAUC_DEFAULT_BOOT_ORDER "\0" \
-+    "BOOT_system0_LEFT=3\0" \
-+    "BOOT_system1_LEFT=3\0" \
-+    "rauc_slot=\0" \
-+    "rauc_bootcmd=rauc_boot\0"
-+
-+	
  /* Link Definitions */
  
  #define CFG_SYS_INIT_RAM_ADDR        0x40000000
+-- 
+2.53.0
+
