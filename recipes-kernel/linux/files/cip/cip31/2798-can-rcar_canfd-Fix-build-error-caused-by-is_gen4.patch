@@ -1,0 +1,53 @@
+From 1b0dbfa08d362368324cd47cf47465307fb28e36 Mon Sep 17 00:00:00 2001
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.x90@mail.toshiba>
+Date: Mon, 5 Jan 2026 06:13:05 +0900
+Subject: [PATCH 02798/12543] can: rcar_canfd: Fix build error caused by
+ is_gen4()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+is_gen4() is undefined because it was modified by commit: f0b37f2cb224 ("can: rcar_canfd: Add sh variable to
+struct rcar_canfd_hw_info").
+This replaces is_gen4() with 'gpriv->info->shared_can_regs'.
+
+```
+drivers/net/can/rcar/rcar_canfd.c: In function ‘rcar_canfd_reset_controller’:
+drivers/net/can/rcar/rcar_canfd.c:874:14: error: implicit declaration of function ‘is_gen4’ [-Wimplicit-function-declaration]
+  874 |         if (!is_gen4(gpriv)) {
+      |              ^~~~~~~
+drivers/net/can/rcar/rcar_canfd.c: At top level:
+```
+
+Fixes: f88ba5098e83 ("can: rcar_canfd: Fix CAN-FD mode as default")
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.x90@mail.toshiba>
+Reviewed-by: Biju Das <biju.das.jz@bp.renesas.com>
+---
+ drivers/net/can/rcar/rcar_canfd.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/can/rcar/rcar_canfd.c b/drivers/net/can/rcar/rcar_canfd.c
+index dace3c4a0ac5..99d0cbe86321 100644
+--- a/drivers/net/can/rcar/rcar_canfd.c
++++ b/drivers/net/can/rcar/rcar_canfd.c
+@@ -851,7 +851,7 @@ static int rcar_canfd_reset_controller(struct rcar_canfd_global *gpriv)
+ 	rcar_canfd_write(gpriv->base, RCANFD_GERFL, 0x0);
+ 
+ 	/* Set the controller into appropriate mode */
+-	if (!gpriv->info->ch_interface_mode) {
++	if (!gpriv->info->shared_can_regs) {
+ 		if (gpriv->fdmode)
+ 			rcar_canfd_set_bit(gpriv->base, RCANFD_GRMCFG,
+ 					   RCANFD_GRMCFG_RCMC);
+@@ -880,7 +880,7 @@ static int rcar_canfd_reset_controller(struct rcar_canfd_global *gpriv)
+ 		}
+ 
+ 		/* Set the controller into appropriate mode */
+-		if (gpriv->info->ch_interface_mode) {
++		if (gpriv->info->shared_can_regs) {
+ 			/* Do not set CLOE and FDOE simultaneously */
+ 			if (!gpriv->fdmode) {
+ 				rcar_canfd_clear_bit(gpriv->base,
+-- 
+2.53.0
+

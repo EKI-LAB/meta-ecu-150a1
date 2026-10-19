@@ -1,0 +1,46 @@
+From 69b5f064ec121525a6f9d8e4219baacf4739c598 Mon Sep 17 00:00:00 2001
+From: Tiezhu Yang <yangtiezhu@loongson.cn>
+Date: Mon, 11 Aug 2025 15:35:04 +0800
+Subject: [PATCH 01509/12543] net: stmmac: Check stmmac_hw_setup() in
+ stmmac_resume()
+
+[ Upstream commit 6896c2449a1858acb643014894d01b3a1223d4e5 ]
+
+stmmac_hw_setup() may return 0 on success and an appropriate negative
+integer as defined in errno.h file on failure, just check it and then
+return early if failed in stmmac_resume().
+
+Signed-off-by: Tiezhu Yang <yangtiezhu@loongson.cn>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Huacai Chen <chenhuacai@loongson.cn>
+Link: https://patch.msgid.link/20250811073506.27513-2-yangtiezhu@loongson.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index d78a676a0c2b..883292bf5918 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -8108,8 +8108,15 @@ int stmmac_resume(struct device *dev)
+ 
+ 	stmmac_free_tx_skbufs(priv);
+ 
+-	stmmac_hw_setup(ndev, false);
++	ret = stmmac_hw_setup(ndev, false);
++	if (ret < 0) {
++		netdev_err(priv->dev, "%s: Hw setup failed\n", __func__);
++		mutex_unlock(&priv->lock);
++		rtnl_unlock();
++		return ret;
++	}
+ 	priv->wol_resume_reset = true;
++
+ 	stmmac_init_coalesce(priv);
+ 	stmmac_set_rx_mode(ndev);
+ 
+-- 
+2.53.0
+

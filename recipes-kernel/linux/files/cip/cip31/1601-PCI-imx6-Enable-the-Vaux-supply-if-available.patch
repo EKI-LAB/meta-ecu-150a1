@@ -1,0 +1,40 @@
+From ce953a0244dd37663ea937a552dc528f17fc5399 Mon Sep 17 00:00:00 2001
+From: Richard Zhu <hongxing.zhu@nxp.com>
+Date: Wed, 20 Aug 2025 10:23:28 +0800
+Subject: [PATCH 01601/12543] PCI: imx6: Enable the Vaux supply if available
+
+[ Upstream commit c221cbf8dc547eb8489152ac62ef103fede99545 ]
+
+When the 3.3Vaux supply is present, fetch it at the probe time and keep it
+enabled for the entire PCIe controller lifecycle so that the link can enter
+L2 state and the devices can signal wakeup using either Beacon or WAKE#
+mechanisms.
+
+Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
+[mani: reworded the subject, description and error message]
+Signed-off-by: Manivannan Sadhasivam <mani@kernel.org>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Link: https://patch.msgid.link/20250820022328.2143374-1-hongxing.zhu@nxp.com
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index 8314af752bba..bc9c9eaed02f 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -1995,6 +1995,10 @@ static int imx_pcie_probe(struct platform_device *pdev)
+ 	if (ret < 0 && ret != -ENODEV)
+ 		return dev_err_probe(dev, ret, "failed to enable vpcie");
+ 
++	ret = devm_regulator_get_enable_optional(&pdev->dev, "vpcie3v3aux");
++	if (ret < 0 && ret != -ENODEV)
++		return dev_err_probe(dev, ret, "failed to enable Vaux supply\n");
++
+ 	imx_pcie->vph = devm_regulator_get_optional(&pdev->dev, "vph");
+ 	if (IS_ERR(imx_pcie->vph)) {
+ 		if (PTR_ERR(imx_pcie->vph) != -ENODEV)
+-- 
+2.53.0
+

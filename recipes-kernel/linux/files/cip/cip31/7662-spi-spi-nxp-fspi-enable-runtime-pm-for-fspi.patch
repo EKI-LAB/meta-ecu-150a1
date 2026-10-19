@@ -1,0 +1,51 @@
+From 36aa92a5d9d551a3947ecc44547af80803538a9d Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@nxp.com>
+Date: Mon, 28 Apr 2025 18:06:44 +0800
+Subject: [PATCH 07662/12543] spi: spi-nxp-fspi: enable runtime pm for fspi
+
+[ Upstream commit 97be4b919a609fc8c4bd1118502b5d26cc2f77c4 ]
+
+Enable the runtime PM in fspi driver.
+Also for system PM, On some board like i.MX8ULP-EVK board,
+after system suspend, IOMUX module will lost power, so all
+the pinctrl setting will lost when system resume back, need
+driver to save/restore the pinctrl setting.
+
+Signed-off-by: Han Xu <han.xu@nxp.com>
+Signed-off-by: Haibo Chen <haibo.chen@nxp.com>
+Link: https://patch.msgid.link/20250428-flexspipatch-v3-2-61d5e8f591bc@nxp.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Stable-dep-of: 68c8c93fdb0d ("spi: nxp-fspi: Use reinit_completion() for repeated operations")
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/spi/spi-nxp-fspi.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-nxp-fspi.c b/drivers/spi/spi-nxp-fspi.c
+index 07bccc8ef7db..7eddcbfac9d5 100644
+--- a/drivers/spi/spi-nxp-fspi.c
++++ b/drivers/spi/spi-nxp-fspi.c
+@@ -1441,10 +1441,8 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 
+ 	ret = devm_request_irq(dev, irq,
+ 			nxp_fspi_irq_handler, 0, pdev->name, f);
+-	if (ret) {
+-		nxp_fspi_clk_disable_unprep(f);
++	if (ret)
+ 		return dev_err_probe(dev, ret, "Failed to request irq\n");
+-	}
+ 
+ 	/* check if the controller work in combination or individual mode */
+ 	f->individual_mode = fwnode_property_read_bool(fwnode,
+@@ -1584,7 +1582,7 @@ static struct platform_driver nxp_fspi_driver = {
+ 		.name	= "nxp-fspi",
+ 		.of_match_table = nxp_fspi_dt_ids,
+ 		.acpi_match_table = ACPI_PTR(nxp_fspi_acpi_ids),
+-		.pm =   &nxp_fspi_pm_ops,
++		.pm = pm_ptr(&nxp_fspi_pm_ops),
+ 	},
+ 	.probe          = nxp_fspi_probe,
+ };
+-- 
+2.53.0
+

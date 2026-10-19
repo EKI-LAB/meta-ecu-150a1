@@ -1,0 +1,48 @@
+From b3c5c5c1b5ac25fce8bd3b0e63f222ac79f564db Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@nxp.com>
+Date: Wed, 19 Nov 2025 11:22:40 +0800
+Subject: [PATCH 03539/12543] arm64: dts: add off-on-delay-us for usdhc2
+ regulator
+
+[ Upstream commit ca643894a37a25713029b36cfe7d1bae515cac08 ]
+
+For SD card, according to the spec requirement, for sd card power reset
+operation, it need sd card supply voltage to be lower than 0.5v and keep
+over 1ms, otherwise, next time power back the sd card supply voltage to
+3.3v, sd card can't support SD3.0 mode again.
+
+To match such requirement on imx8qm-mek board, add 4.8ms delay between
+sd power off and power on.
+
+Fixes: 307fd14d4b14 ("arm64: dts: imx: add imx8qm mek support")
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Haibo Chen <haibo.chen@nxp.com>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/arm64/boot/dts/freescale/imx8qm-mek.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8qm-mek.dts b/arch/arm64/boot/dts/freescale/imx8qm-mek.dts
+index 62f955e582ef..d05b6a45eedc 100644
+--- a/arch/arm64/boot/dts/freescale/imx8qm-mek.dts
++++ b/arch/arm64/boot/dts/freescale/imx8qm-mek.dts
+@@ -179,6 +179,15 @@ reg_usdhc2_vmmc: usdhc2-vmmc {
+ 		enable-active-high;
+ 	};
+ 
++	reg_fec2_supply: regulator-fec2-nvcc {
++		compatible = "regulator-fixed";
++		regulator-name = "fec2_nvcc";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		gpio = <&max7322 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	reg_can01_en: regulator-can01-gen {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "can01-en";
+-- 
+2.53.0
+

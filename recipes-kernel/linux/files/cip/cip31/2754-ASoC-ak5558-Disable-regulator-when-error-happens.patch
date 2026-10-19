@@ -1,0 +1,45 @@
+From 0e37a60d394e397baff2f08285457ae23fc4a74c Mon Sep 17 00:00:00 2001
+From: Shengjiu Wang <shengjiu.wang@nxp.com>
+Date: Wed, 3 Dec 2025 18:05:29 +0800
+Subject: [PATCH 02754/12543] ASoC: ak5558: Disable regulator when error
+ happens
+
+[ Upstream commit 1f8f726a2a29c28f65b30880335a1610c5e63594 ]
+
+Disable regulator in runtime resume when error happens to balance
+the reference count of regulator.
+
+Fixes: 2ff6d5a108c6 ("ASoC: ak5558: Add regulator support")
+Signed-off-by: Shengjiu Wang <shengjiu.wang@nxp.com>
+Link: https://patch.msgid.link/20251203100529.3841203-3-shengjiu.wang@nxp.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ sound/soc/codecs/ak5558.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/sound/soc/codecs/ak5558.c b/sound/soc/codecs/ak5558.c
+index 13d26ca5310a..9447a082b2f9 100644
+--- a/sound/soc/codecs/ak5558.c
++++ b/sound/soc/codecs/ak5558.c
+@@ -374,12 +374,14 @@ static int __maybe_unused ak5558_runtime_resume(struct device *dev)
+ 
+ 	ret = regcache_sync(ak5558->regmap);
+ 	if (ret) {
+-		regulator_bulk_disable(ARRAY_SIZE(ak5558->supplies),
+-				       ak5558->supplies);
+-		return ret;
++		goto err;
+ 	}
+ 
+ 	return 0;
++err:
++	regcache_cache_only(ak5558->regmap, true);
++	regulator_bulk_disable(ARRAY_SIZE(ak5558->supplies), ak5558->supplies);
++	return ret;
+ }
+ 
+ static const struct dev_pm_ops ak5558_pm = {
+-- 
+2.53.0
+

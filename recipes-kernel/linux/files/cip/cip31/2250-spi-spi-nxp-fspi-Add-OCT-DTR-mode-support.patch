@@ -1,0 +1,55 @@
+From f307fd2eeff47ae6fa9776961a2b36251b9b4db4 Mon Sep 17 00:00:00 2001
+From: Haibo Chen <haibo.chen@nxp.com>
+Date: Wed, 17 Sep 2025 15:27:10 +0800
+Subject: [PATCH 02250/12543] spi: spi-nxp-fspi: Add OCT-DTR mode support
+
+[ Upstream commit 0f67557763accbdd56681f17ed5350735198c57b ]
+
+Add OCT-DTR mode support in default, since flexspi do not supports
+swapping bytes on a 16 bit boundary in OCT-DTR mode, so mark swap16
+as false.
+
+lx2160a do not support DQS, so add a quirk to disable DTR mode for this
+platform.
+
+Signed-off-by: Haibo Chen <haibo.chen@nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Link: https://patch.msgid.link/20250917-flexspi-ddr-v2-5-bb9fe2a01889@nxp.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Stable-dep-of: 40ad64ac25bb ("spi: nxp-fspi: Propagate fwnode in ACPI case as well")
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/spi/spi-nxp-fspi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-nxp-fspi.c b/drivers/spi/spi-nxp-fspi.c
+index 12dd0df3c572..6645a46e0456 100644
+--- a/drivers/spi/spi-nxp-fspi.c
++++ b/drivers/spi/spi-nxp-fspi.c
+@@ -330,7 +330,6 @@
+ 
+ /* Access flash memory using IP bus only */
+ #define FSPI_QUIRK_USE_IP_ONLY	BIT(0)
+-
+ /* Disable DTR */
+ #define FSPI_QUIRK_DISABLE_DTR	BIT(1)
+ 
+@@ -1328,6 +1327,7 @@ static const struct spi_controller_mem_ops nxp_fspi_mem_ops = {
+ 
+ static const struct spi_controller_mem_caps nxp_fspi_mem_caps = {
+ 	.dtr = true,
++	.swap16 = false,
+ 	.per_op_freq = true,
+ };
+ 
+@@ -1455,6 +1455,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 	ctlr->bus_num = -1;
+ 	ctlr->num_chipselect = NXP_FSPI_MAX_CHIPSELECT;
+ 	ctlr->mem_ops = &nxp_fspi_mem_ops;
++
+ 	if (f->devtype_data->quirks & FSPI_QUIRK_DISABLE_DTR)
+ 		ctlr->mem_caps = &nxp_fspi_mem_caps_quirks;
+ 	else
+-- 
+2.53.0
+

@@ -1,0 +1,91 @@
+From ea9dbb485cc96edc21c8febeac27c6486ab5b45d Mon Sep 17 00:00:00 2001
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 17 Oct 2025 19:19:13 -0400
+Subject: [PATCH 01005/12543] media: nxp: imx8-isi: Drop unused argument to
+ mxc_isi_channel_chain()
+
+[ Upstream commit 9a21ffeade25cbf310f5db39a1f9932695dd41bb ]
+
+The bypass argument to the mxc_isi_channel_chain() function is unused.
+Drop it.
+
+Link: https://lore.kernel.org/r/20250813225501.20762-1-laurent.pinchart@ideasonboard.com
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+Stable-dep-of: 178aa3360220 ("media: nxp: imx8-isi: m2m: Fix streaming cleanup on release")
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/media/platform/nxp/imx8-isi/imx8-isi-core.h | 2 +-
+ drivers/media/platform/nxp/imx8-isi/imx8-isi-hw.c   | 2 +-
+ drivers/media/platform/nxp/imx8-isi/imx8-isi-m2m.c  | 6 +++---
+ drivers/media/platform/nxp/imx8-isi/imx8-isi-pipe.c | 2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/media/platform/nxp/imx8-isi/imx8-isi-core.h b/drivers/media/platform/nxp/imx8-isi/imx8-isi-core.h
+index 1888191adefc..ada26fe942f3 100644
+--- a/drivers/media/platform/nxp/imx8-isi/imx8-isi-core.h
++++ b/drivers/media/platform/nxp/imx8-isi/imx8-isi-core.h
+@@ -387,7 +387,7 @@ void mxc_isi_channel_get(struct mxc_isi_pipe *pipe);
+ void mxc_isi_channel_put(struct mxc_isi_pipe *pipe);
+ void mxc_isi_channel_enable(struct mxc_isi_pipe *pipe);
+ void mxc_isi_channel_disable(struct mxc_isi_pipe *pipe);
+-int mxc_isi_channel_chain(struct mxc_isi_pipe *pipe, bool bypass);
++int mxc_isi_channel_chain(struct mxc_isi_pipe *pipe);
+ void mxc_isi_channel_unchain(struct mxc_isi_pipe *pipe);
+ 
+ void mxc_isi_channel_config(struct mxc_isi_pipe *pipe,
+diff --git a/drivers/media/platform/nxp/imx8-isi/imx8-isi-hw.c b/drivers/media/platform/nxp/imx8-isi/imx8-isi-hw.c
+index c64715be9250..e0b8fc8a7df4 100644
+--- a/drivers/media/platform/nxp/imx8-isi/imx8-isi-hw.c
++++ b/drivers/media/platform/nxp/imx8-isi/imx8-isi-hw.c
+@@ -608,7 +608,7 @@ void mxc_isi_channel_release(struct mxc_isi_pipe *pipe)
+  *
+  * TODO: Support secondary line buffer for downscaling YUV420 images.
+  */
+-int mxc_isi_channel_chain(struct mxc_isi_pipe *pipe, bool bypass)
++int mxc_isi_channel_chain(struct mxc_isi_pipe *pipe)
+ {
+ 	/* Channel chaining requires both line and output buffer. */
+ 	const u8 resources = MXC_ISI_CHANNEL_RES_OUTPUT_BUF
+diff --git a/drivers/media/platform/nxp/imx8-isi/imx8-isi-m2m.c b/drivers/media/platform/nxp/imx8-isi/imx8-isi-m2m.c
+index 0fac81051c84..6077346f8306 100644
+--- a/drivers/media/platform/nxp/imx8-isi/imx8-isi-m2m.c
++++ b/drivers/media/platform/nxp/imx8-isi/imx8-isi-m2m.c
+@@ -510,8 +510,8 @@ static int mxc_isi_m2m_streamon(struct file *file, void *fh,
+ 	}
+ 
+ 	bypass = cap_pix->width == out_pix->width &&
+-		 cap_pix->height == out_pix->height &&
+-		 cap_info->encoding == out_info->encoding;
++		cap_pix->height == out_pix->height &&
++		cap_info->encoding == out_info->encoding;
+ 
+ 	/*
+ 	 * Acquire the pipe and initialize the channel with the first user of
+@@ -534,7 +534,7 @@ static int mxc_isi_m2m_streamon(struct file *file, void *fh,
+ 	 * buffer chaining.
+ 	 */
+ 	if (!ctx->chained && out_pix->width > MXC_ISI_MAX_WIDTH_UNCHAINED && !bypass) {
+-		ret = mxc_isi_channel_chain(m2m->pipe, bypass);
++		ret = mxc_isi_channel_chain(m2m->pipe);
+ 		if (ret)
+ 			goto deinit;
+ 
+diff --git a/drivers/media/platform/nxp/imx8-isi/imx8-isi-pipe.c b/drivers/media/platform/nxp/imx8-isi/imx8-isi-pipe.c
+index 2f0f70503344..f3d862124572 100644
+--- a/drivers/media/platform/nxp/imx8-isi/imx8-isi-pipe.c
++++ b/drivers/media/platform/nxp/imx8-isi/imx8-isi-pipe.c
+@@ -983,7 +983,7 @@ int mxc_isi_pipe_acquire(struct mxc_isi_pipe *pipe,
+ 
+ 	/* Chain the channel if needed for wide resolutions. */
+ 	if (sink_fmt->width > MXC_ISI_MAX_WIDTH_UNCHAINED && !pipe->bypass) {
+-		ret = mxc_isi_channel_chain(pipe, false);
++		ret = mxc_isi_channel_chain(pipe);
+ 		if (ret)
+ 			mxc_isi_channel_release(pipe);
+ 	}
+-- 
+2.53.0
+
