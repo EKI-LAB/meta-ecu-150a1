@@ -1,0 +1,37 @@
+From 6b91e1644a7fb03e43d8c8a52417805e61203232 Mon Sep 17 00:00:00 2001
+From: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Date: Thu, 20 Nov 2025 17:03:56 +0000
+Subject: [PATCH 01879/12543] arm64: defconfig: Enable RZ/V2H(P) USB2 PHY
+ controller reset driver
+
+commit 41cffe6d234617f9637b68209a4ee42e0457f2a3 upstream.
+
+Enable the `CONFIG_RESET_RZV2H_USB2PHY` option in the arm64 defconfig to
+support the USB2 PHY controller reset driver on the Renesas RZ/V2H(P)
+SoC, as used on the RZ/V2H EVK board.
+
+Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Link: https://lore.kernel.org/20250513125858.251064-1-prabhakar.mahadev-lad.rj@bp.renesas.com
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ovidiu Panait <ovidiu.panait.rb@renesas.com>
+Signed-off-by: Pavel Machek <pavel@denx.de>
+---
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 9d23ff7bbc22..c78652924c6a 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -1685,6 +1685,7 @@ CONFIG_RESET_IMX7=y
+ CONFIG_RESET_QCOM_AOSS=y
+ CONFIG_RESET_QCOM_PDC=m
+ CONFIG_RESET_RZG2L_USBPHY_CTRL=y
++CONFIG_RESET_RZV2H_USB2PHY=m
+ CONFIG_RESET_TI_SCI=y
+ CONFIG_RESET_IMX8ULP_SIM=y
+ CONFIG_PHY_CADENCE_SALVO=y
+-- 
+2.53.0
+

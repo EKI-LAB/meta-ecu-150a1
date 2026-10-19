@@ -995,9 +995,9 @@ diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
 index b0adfeff2b35..095913e948df 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -2015,4 +2015,13 @@ config RTC_DRV_POLARFIRE_SOC
+@@ -2087,4 +2087,13 @@ config RTC_DRV_SSD202D
  	  This driver can also be built as a module, if so, the module
- 	  will be called "rtc-mpfs".
+ 	  will be called "rtc-ssd20xd".
  
 +config RTC_DRV_HT1382
 +        tristate "HT1382 RTC"

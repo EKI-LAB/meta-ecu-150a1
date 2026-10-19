@@ -1,0 +1,37 @@
+From 30df5ade25b978ac15714535016696c6d841e481 Mon Sep 17 00:00:00 2001
+From: Jacky Bai <ping.bai@nxp.com>
+Date: Fri, 20 Mar 2026 16:43:46 +0800
+Subject: [PATCH 06683/12543] pmdomain: imx8mp-blk-ctrl: Keep the NOC_HDCP
+ clock enabled
+
+commit e91d5f94acf68618ea3ad9c92ac28614e791ae7d upstream.
+
+Keep the NOC_HDCP clock always enabled to fix the potential hang
+caused by the NoC ADB400 port power down handshake.
+
+Fixes: 77b0ddb42add ("soc: imx: add i.MX8MP HDMI blk ctrl HDCP/HRV_MWR")
+Signed-off-by: Jacky Bai <ping.bai@nxp.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/pmdomain/imx/imx8mp-blk-ctrl.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/pmdomain/imx/imx8mp-blk-ctrl.c b/drivers/pmdomain/imx/imx8mp-blk-ctrl.c
+index e08033d9fd48..fdc446e0eb29 100644
+--- a/drivers/pmdomain/imx/imx8mp-blk-ctrl.c
++++ b/drivers/pmdomain/imx/imx8mp-blk-ctrl.c
+@@ -432,9 +432,6 @@ static void imx8mp_hdmi_blk_ctrl_power_on(struct imx8mp_blk_ctrl *bc,
+ 		regmap_set_bits(bc->regmap, HDMI_RTX_RESET_CTL0, BIT(12));
+ 		regmap_clear_bits(bc->regmap, HDMI_TX_CONTROL0, BIT(3));
+ 		break;
+-	case IMX8MP_HDMIBLK_PD_HDCP:
+-		regmap_set_bits(bc->regmap, HDMI_RTX_CLK_CTL0, BIT(11));
+-		break;
+ 	case IMX8MP_HDMIBLK_PD_HRV:
+ 		regmap_set_bits(bc->regmap, HDMI_RTX_CLK_CTL1, BIT(3) | BIT(4) | BIT(5));
+ 		regmap_set_bits(bc->regmap, HDMI_RTX_RESET_CTL0, BIT(15));
+-- 
+2.53.0
+

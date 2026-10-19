@@ -1,0 +1,86 @@
+From 46b6e474de8c769a25c54f304886af4b89dadec0 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Wed, 26 Nov 2025 21:25:01 +0100
+Subject: [PATCH 02251/12543] spi: nxp-fspi: Propagate fwnode in ACPI case as
+ well
+
+[ Upstream commit 40ad64ac25bb736740f895d99a4aebbda9b80991 ]
+
+Propagate fwnode of the ACPI device to the SPI controller Linux device.
+Currently only OF case propagates fwnode to the controller.
+
+While at it, replace several calls to dev_fwnode() with a single one
+cached in a local variable, and unify checks for fwnode type by using
+is_*_node() APIs.
+
+Fixes: 55ab8487e01d ("spi: spi-nxp-fspi: Add ACPI support")
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Reviewed-by: Haibo Chen <haibo.chen@nxp.com>
+Link: https://patch.msgid.link/20251126202501.2319679-1-andriy.shevchenko@linux.intel.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/spi/spi-nxp-fspi.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/spi/spi-nxp-fspi.c b/drivers/spi/spi-nxp-fspi.c
+index 6645a46e0456..b8077384807c 100644
+--- a/drivers/spi/spi-nxp-fspi.c
++++ b/drivers/spi/spi-nxp-fspi.c
+@@ -1364,7 +1364,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ {
+ 	struct spi_controller *ctlr;
+ 	struct device *dev = &pdev->dev;
+-	struct device_node *np = dev->of_node;
++	struct fwnode_handle *fwnode = dev_fwnode(dev);
+ 	struct resource *res;
+ 	struct nxp_fspi *f;
+ 	int ret, irq;
+@@ -1386,7 +1386,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, f);
+ 
+ 	/* find the resources - configuration register address space */
+-	if (is_acpi_node(dev_fwnode(f->dev)))
++	if (is_acpi_node(fwnode))
+ 		f->iobase = devm_platform_ioremap_resource(pdev, 0);
+ 	else
+ 		f->iobase = devm_platform_ioremap_resource_byname(pdev, "fspi_base");
+@@ -1394,7 +1394,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 		return PTR_ERR(f->iobase);
+ 
+ 	/* find the resources - controller memory mapped space */
+-	if (is_acpi_node(dev_fwnode(f->dev)))
++	if (is_acpi_node(fwnode))
+ 		res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 	else
+ 		res = platform_get_resource_byname(pdev,
+@@ -1407,7 +1407,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 	f->memmap_phy_size = resource_size(res);
+ 
+ 	/* find the clocks */
+-	if (dev_of_node(&pdev->dev)) {
++	if (is_of_node(fwnode)) {
+ 		f->clk_en = devm_clk_get(dev, "fspi_en");
+ 		if (IS_ERR(f->clk_en))
+ 			return PTR_ERR(f->clk_en);
+@@ -1447,7 +1447,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/* check if the controller work in combination or individual mode */
+-	f->individual_mode = of_property_read_bool(np,
++	f->individual_mode = fwnode_property_read_bool(fwnode,
+ 						   "nxp,fspi-individual-mode");
+ 
+ 	devm_mutex_init(dev, &f->lock);
+@@ -1463,7 +1463,7 @@ static int nxp_fspi_probe(struct platform_device *pdev)
+ 
+ 	nxp_fspi_default_setup(f);
+ 
+-	ctlr->dev.of_node = np;
++	device_set_node(&ctlr->dev, fwnode);
+ 
+ 	ret = devm_add_action_or_reset(dev, nxp_fspi_cleanup, f);
+ 	if (ret)
+-- 
+2.53.0
+

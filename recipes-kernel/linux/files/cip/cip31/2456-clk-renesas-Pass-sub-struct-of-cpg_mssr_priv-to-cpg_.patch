@@ -1,0 +1,56 @@
+From bb726ddf24be7512ff9e37fe0008366369b75a16 Mon Sep 17 00:00:00 2001
+From: Thierry Bultel <thierry.bultel.yh@bp.renesas.com>
+Date: Thu, 15 May 2025 16:18:19 +0200
+Subject: [PATCH 02456/12543] clk: renesas: Pass sub struct of cpg_mssr_priv to
+ cpg_clk_register
+
+[ Upstream commit 3d37ca1482c36975255f29911a529f84f1bc34a9 ]
+
+In a subsequent patch, the registration callback will need more parameters
+from cpg_mssr_priv (like another base address with clock controllers
+with double register block, and also, notifiers and rmw_lock).
+Instead of adding more parameters, move the needed parameters to a public
+sub-struct.
+Instead moving clks to this structure, which would have implied to add
+an allocation (and cleanup) for it, keep the way the allocation is done
+and just have a copy of the pointer in the public structure.
+
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Thierry Bultel <thierry.bultel.yh@bp.renesas.com>
+Link: https://lore.kernel.org/20250515141828.43444-5-thierry.bultel.yh@bp.renesas.com
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Stable-dep-of: b91401af6c00 ("clk: renesas: cpg-mssr: Read back reset registers to assure values latched")
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/clk/renesas/renesas-cpg-mssr.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/drivers/clk/renesas/renesas-cpg-mssr.h b/drivers/clk/renesas/renesas-cpg-mssr.h
+index ad11ab5f0069..80a98e2db233 100644
+--- a/drivers/clk/renesas/renesas-cpg-mssr.h
++++ b/drivers/clk/renesas/renesas-cpg-mssr.h
+@@ -56,6 +56,21 @@ struct cpg_mssr_pub {
+ 	struct clk **clks;
+ };
+ 
++/**
++ * struct cpg_mssr_pub - data shared with device-specific clk registration code
++ *
++ * @base0: CPG/MSSR register block base0 address
++ * @notifiers: Notifier chain to save/restore clock state for system resume
++ * @rmw_lock: protects RMW register accesses
++ * @clks: pointer to clocks
++ */
++struct cpg_mssr_pub {
++	void __iomem *base0;
++	struct raw_notifier_head notifiers;
++	spinlock_t rmw_lock;
++	struct clk **clks;
++};
++
+ enum clk_types {
+ 	/* Generic */
+ 	CLK_TYPE_IN,		/* External Clock Input */
+-- 
+2.53.0
+
